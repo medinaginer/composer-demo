@@ -23,6 +23,8 @@ S3_BUCKET_NAME = ""
 BQ_DATASET_NAME = ""
 BQ_TABLE_NAME = ""
 
+S3_BUCKET_NAME_DEST = ""
+
 # Dataform-specific details
 REPOSITORY_ID = ""
 REGION = ""
@@ -30,8 +32,7 @@ GIT_COMMITISH = "main"  # or your specific branch/commit
 
 default_args = {
 
-    # start_date': pendulum.datetime(2023, 1, 1, tz="Europe/London"),  # Aware start date
-    'start_date': datetime.datetime(2023, 1, 1),
+    'start_date': pendulum.datetime(2024, 10, 9, tz="Europe/London"),  # Aware start date
     'author': 'Carlos Medina',
     'retries': 1,
     # Retry on failure after 5 minutes
@@ -116,7 +117,7 @@ with models.DAG(
     bigquery_to_gcs = BigQueryToGCSOperator(
         task_id="bigquery_to_gcs",
         source_project_dataset_table=f"{PROJECT_ID}.{BQ_DATASET_NAME}.{BQ_TABLE_NAME}",
-        destination_cloud_storage_uris=[f"gs://{GCS_BUCKET_NAME}/exported_holidays_{{{{ logical_date.strftime('%Y%m%d_%H') }}}}.csv"],  # Templated URI using logical_date
+        destination_cloud_storage_uris=[f"gs://{GCS_BUCKET_NAME}/exported_holidays_{{{{ execution_date.strftime('%Y%m%d_%H') }}}}.csv"],
         export_format="CSV",
         field_delimiter=",",
         print_header=True,
@@ -128,7 +129,7 @@ with models.DAG(
         task_id="gcs_to_s3",
         gcs_bucket=GCS_BUCKET_NAME,
         prefix="exported_holidays",
-        dest_s3_key=f"s3://{S3_BUCKET_NAME}/google-dataform/",  # Ensure this ends with a forward slash
+        dest_s3_key=f"s3://{S3_BUCKET_NAME_DEST}/google-dataform/",  # Ensure this ends with a forward slash
         gcp_conn_id="google_cloud_default",
         dest_aws_conn_id="aws_default",
         replace=True,
